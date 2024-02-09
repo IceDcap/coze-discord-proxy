@@ -20,7 +20,7 @@ _觉得有点意思的话 别忘了点个🌟_
 - [x] 支持和`openai`对齐的图/文件生文接口(`v1/chat/completions`)(按照`GPT4V`图/文件生文接口的请求格式 [ 支持`url`或`base64` ])。
 - [x] 支持和`openai`对齐的`dall-e-3`文生图接口(`v1/images/generations`)。
 - [x] 支持每日`24`点定时任务自动活跃机器人。
-- [x] 支持配置多机器人 (通过`PROXY_SECRET`指定) 详细请看[进阶配置](#进阶配置)。
+- [x] 支持配置多机器人 (通过`PROXY_SECRET`/`model`指定) 详细请看[进阶配置](#进阶配置)。
 
 ### 接口文档:
 
@@ -168,7 +168,7 @@ Render 可以直接部署 docker 镜像,不需要 fork 仓库：[Render](https:/
 2. `GUILD_ID:119xxxxxxxx796`  两个机器人所在的服务器ID
 3. `COZE_BOT_ID:119xxxxxxxx7`  由coze托管的机器人ID
 4. `CHANNEL_ID:119xxxxxx24`  默认频道-(目前版本下该参数仅用来活跃机器人)
-5. `CHANNEL_AUTO_DEL_TIME:60`  [可选]频道自动删除时间(秒) 此参数为每次对话完成后自动删除频道的时间(默认为5s),为空或0时则不删除,推荐不设置
+5. `CHANNEL_AUTO_DEL_TIME:60`  [可选]频道自动删除时间(秒) 此参数为每次对话完成后自动删除频道的时间(默认为5s),为0时则不删除,推荐不设置
 6. `PORT:7077`  [可选]端口
 7. `PROXY_SECRET:123456`  [可选]接口密钥-修改此行为请求头校验的值(多个请以,分隔)(与openai-API-KEY用法一致)
 8. `REQUEST_OUT_TIME:60`  [可选]对话接口非流响应下的请求超时时间,推荐不设置
@@ -187,16 +187,19 @@ Render 可以直接部署 docker 镜像,不需要 fork 仓库：[Render](https:/
   {
     "proxySecret": "123", // 接口请求密钥(PROXY_SECRET)
     "cozeBotId": "12***************31", // coze托管的机器人ID
-    "channelId": "12***************56"  // discord频道ID(机器人必须在此频道所在的服务器)(目前版本下该参数仅用来活跃机器人)
+    "model": "GPT-3.5-16k", // [可选]coze托管的机器人模型名称
+    "channelId": "12***************56"  // [可选]discord频道ID(机器人必须在此频道所在的服务器)(目前版本下该参数仅用来活跃机器人)
   },
   {
     "proxySecret": "456",
     "cozeBotId": "12***************64",
+    "model": "GPT-4-8k", 
     "channelId": "12***************78"
   },
   {
     "proxySecret": "789",
     "cozeBotId": "12***************12",
+    "model": "GPT-4-Turbo-128k",
     "channelId": "12***************24"
   }
 ]
@@ -204,7 +207,7 @@ Render 可以直接部署 docker 镜像,不需要 fork 仓库：[Render](https:/
 
 3. 重启服务
 
-> 当有此配置时,会通过请求头携带的请求密钥匹配此配置中的`cozeBotId`,`channelId`,若匹配到多个则随机匹配一个,所以当存在多用户使用时可对每个用户分发独立的请求密钥。
+> 当有此配置时,会通过请求头携带的[请求密钥]+请求体中的[`model`]匹配此配置中的`cozeBotId`,若匹配到多个则随机选择一个,所以当存在多用户使用时可对每个用户分发独立的请求密钥。配置很灵活,可以根据自己的需求进行配置。
 
 第三方平台(如: `zeabur`)部署的服务需要[配置多机器人]请参考[issue#30](https://github.com/deanxv/coze-discord-proxy/issues/30)
 

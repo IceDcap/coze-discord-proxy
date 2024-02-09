@@ -157,12 +157,14 @@ func messageUpdate(s *discordgo.Session, m *discordgo.MessageUpdate) {
 	// 尝试获取 stopChan
 	stopChan, exists := ReplyStopChans[m.ReferencedMessage.ID]
 	if !exists {
+		// 不存在则直接删除频道
+		SetChannelDeleteTimer(m.ChannelID, 5*time.Minute)
 		return
 	}
 
 	// 如果作者为 nil 或消息来自 bot 本身,则发送停止信号
 	if m.Author == nil || m.Author.ID == s.State.User.ID {
-		ChannelDel(m.ChannelID)
+		SetChannelDeleteTimer(m.ChannelID, 5*time.Minute)
 		stopChan <- model.ChannelStopChan{
 			Id: m.ChannelID,
 		}
@@ -516,12 +518,13 @@ func UploadToDiscordAndGetURL(channelID string, base64Data string) (string, erro
 }
 
 // FilterConfigs 根据proxySecret和channelId过滤BotConfig
-func FilterConfigs(configs []model.BotConfig, secret string, channelId *string) []model.BotConfig {
+func FilterConfigs(configs []model.BotConfig, secret, gptModel string, channelId *string) []model.BotConfig {
 	var filteredConfigs []model.BotConfig
 	for _, config := range configs {
 		matchSecret := secret == "" || config.ProxySecret == secret
+		matchGptModel := gptModel == "" || config.Model == gptModel
 		matchChannelId := channelId == nil || *channelId == "" || config.ChannelId == *channelId
-		if matchSecret && matchChannelId {
+		if matchSecret && matchChannelId && matchGptModel {
 			filteredConfigs = append(filteredConfigs, config)
 		}
 	}
