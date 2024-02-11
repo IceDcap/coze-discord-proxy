@@ -18,6 +18,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
@@ -30,6 +31,7 @@ var GuildId = os.Getenv("GUILD_ID")
 var ChannelId = os.Getenv("CHANNEL_ID")
 var ProxyUrl = os.Getenv("PROXY_URL")
 var ChannelAutoDelTime = os.Getenv("CHANNEL_AUTO_DEL_TIME")
+var CozeBotStayActiveEnable = os.Getenv("COZE_BOT_STAY_ACTIVE_ENABLE")
 
 var BotConfigList []model.BotConfig
 
@@ -73,7 +75,9 @@ func StartBot(ctx context.Context, token string) {
 	checkEnvVariable()
 	common.SysLog("Bot is now running. Enjoy It.")
 
-	go scheduleDailyMessage()
+	if CozeBotStayActiveEnable != "0" {
+		go scheduleDailyMessage()
+	}
 
 	go func() {
 		<-ctx.Done()
@@ -283,6 +287,15 @@ func processMessageForOpenAI(m *discordgo.MessageUpdate) model.OpenAIChatComplet
 
 func processMessageForOpenAIImage(m *discordgo.MessageUpdate) model.OpenAIImagesGenerationResponse {
 	var response model.OpenAIImagesGenerationResponse
+
+	re := regexp.MustCompile(`]\((https?://\S+)\)`)
+	submatches := re.FindAllStringSubmatch(m.Content, -1)
+
+	for _, match := range submatches {
+		response.Data = append(response.Data, struct {
+			URL string `json:"url"`
+		}{URL: match[1]})
+	}
 
 	if len(m.Embeds) != 0 {
 		for _, embed := range m.Embeds {
